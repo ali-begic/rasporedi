@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <title>Prikaz slike po izboru</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 30px;
+            max-width: 800px;
+            margin: auto;
+            background-color: #f9f9f9;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        #comboBox {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+            max-width: 300px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #slika {
+            display: block;
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            margin-top: 30px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Odaberi ime</h2>
+        <select id="comboBox"></select>
+        <img id="slika" src="" alt="Slika nije dostupna">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
