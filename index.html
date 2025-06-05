@@ -4,48 +4,245 @@
     <meta charset="UTF-8">
     <title>Rasporedi</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
+        /* General Reset */
+        * {
             margin: 0;
-            padding: 25px;
-            font-size: 20px;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        h1 {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            padding: 15px 30px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .top-bar button {
+            background-color: transparent;
+            border: 2px solid white;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .top-bar button:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .top-bar button.active {
+            background-color: white;
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        select {
+            padding: 12px 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 350px;
+            background-color: #fff;
+            transition: box-shadow 0.2s ease;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+            border-color: #3498db;
+        }
+
+        #imageContainer {
+            text-align: center;
+            padding-left: 30px;
+            padding-right: 30px;
+            width: 100%;
+        }
+
+        #imageContainer img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
             margin-bottom: 30px;
         }
 
-        .smjene {
-            display: flex;
-            gap: 40px;
-        }
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+                align-items: center;
+            }
 
-        a {
-            text-decoration: none;
-            background-color: #3498db;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 18px;
-            transition: background-color 0.3s ease;
-        }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
 
-        a:hover {
-            background-color: #2980b9;
+            .top-bar button {
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Izaberi smjenu</h1>
-    <div class="smjene">
-        <a href="Smjena_A/smjena_a.html">Smjena A</a>
-        <a href="Smjena_B/smjena_b.html">Smjena B</a>
+    <div class="top-bar">
+        <button id="profesoriBtn" class="active">Profesori</button>
+        <button id="razrediBtn">Razredi</button>
     </div>
+    <div class="content">
+        <select id="nameSelect"></select>
+        <select id="shiftSelect">
+            <option value="a" selected>A smjena</option>
+            <option value="b">B smjena</option>
+            <option value="both">Obje</option>
+        </select>
+    </div>
+    <div id="imageContainer"></div>
+
+    <script>
+        const profesoriBtn = document.getElementById('profesoriBtn');
+        const razrediBtn = document.getElementById('razrediBtn');
+        const nameSelect = document.getElementById('nameSelect');
+        const shiftSelect = document.getElementById('shiftSelect');
+        const imageContainer = document.getElementById('imageContainer');
+
+        let currentType = 'profesori';
+
+        const transliterate = s => {
+            const map = { 'č': 'c', 'ć': 'c', 'š': 's', 'đ': 'd', 'ž': 'z' };
+            return s.replace(/[čćšđž]/gi, c => map[c.toLowerCase()] || c);
+        };
+
+        const toSnakeCase = s => {
+            s = s.toLowerCase();
+            s = transliterate(s);
+            s = s.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '');
+            return s;
+        };
+
+        async function loadNames() {
+            let shift = shiftSelect.value;
+            let type = currentType;
+            const paths = [];
+
+            if (shift === 'both') {
+                paths.push(['smjena_a/' + type + '/lista_imena.txt', 'smjena_a/' + type]);
+                paths.push(['smjena_b/' + type + '/lista_imena.txt', 'smjena_b/' + type]);
+            } else {
+                const folder = shift === 'a' ? 'smjena_a' : 'smjena_b';
+                paths.push([folder + '/' + type + '/lista_imena.txt', folder + '/' + type]);
+            }
+
+            const itemsMap = new Map();
+
+            for (let [listPath, basePath] of paths) {
+                try {
+                    const response = await fetch(listPath);
+                    if (!response.ok) continue;
+                    const text = await response.text();
+                    const names = text.split('\n').map(n => n.trim()).filter(n => n);
+
+                    for (let name of names) {
+                        let key = transliterate(name.toLowerCase().split(/\s+/).sort().join(' '));
+                        if (!itemsMap.has(key)) itemsMap.set(key, { name: name, paths: [] });
+                        itemsMap.get(key).paths.push([name, basePath]);
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            const sortedItems = [...itemsMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+            nameSelect.innerHTML = sortedItems.map(i => `<option value="${encodeURIComponent(JSON.stringify(i))}">${i.name}</option>`).join('');
+
+            displayImages();
+        }
+
+        async function displayImages() {
+            const selected = nameSelect.value;
+            if (!selected) return;
+
+            imageContainer.innerHTML = '';
+            const { paths } = JSON.parse(decodeURIComponent(selected));
+
+            if (shiftSelect.value !== 'both') {
+                // Only one image from single path
+                const [name, path] = paths[0];
+                const img = document.createElement('img');
+                img.src = `${path}/${toSnakeCase(name)}.png`;
+                img.onload = () => imageContainer.appendChild(img);
+            } else {
+                // Load all permutations
+                for (let [name, path] of paths) {
+                    const nameParts = name.trim().split(/\s+/);
+                    const permutations = getPermutations(nameParts);
+                    const uniquePerms = new Set(permutations.map(p => toSnakeCase(p.join(' '))));
+
+                    for (let filename of uniquePerms) {
+                        const img = document.createElement('img');
+                        img.src = `${path}/${filename}.png`;
+                        img.onload = () => imageContainer.appendChild(img);
+                    }
+                }
+            }
+        }
+
+        function getPermutations(arr) {
+            if (arr.length === 1) return [arr];
+            const perms = [];
+            for (let i = 0; i < arr.length; i++) {
+                const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+                for (let p of getPermutations(rest)) {
+                    perms.push([arr[i]].concat(p));
+                }
+            }
+            return perms;
+        }
+
+        profesoriBtn.addEventListener('click', () => {
+            currentType = 'profesori';
+            profesoriBtn.classList.add('active');
+            razrediBtn.classList.remove('active');
+            loadNames();
+        });
+
+        razrediBtn.addEventListener('click', () => {
+            currentType = 'razredi';
+            profesoriBtn.classList.remove('active');
+            razrediBtn.classList.add('active');
+            loadNames();
+        });
+
+        nameSelect.addEventListener('change', displayImages);
+        shiftSelect.addEventListener('change', loadNames);
+
+        loadNames();
+    </script>
 </body>
 </html>
